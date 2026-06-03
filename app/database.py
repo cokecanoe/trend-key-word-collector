@@ -1,3 +1,4 @@
+import json
 import sqlite3
 import os
 from datetime import datetime
@@ -43,8 +44,21 @@ def init_db():
                 collected_at TEXT NOT NULL
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS content_briefs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                content_angle TEXT,
+                hook TEXT,
+                text_overlays TEXT,
+                voiceover_script TEXT,
+                caption TEXT,
+                hashtags TEXT,
+                generated_at TEXT NOT NULL
+            )
+        ''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_reddit_collected ON reddit_keywords(collected_at)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_trends_collected ON google_trends(collected_at)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_briefs_generated ON content_briefs(generated_at)')
 
 
 def save_reddit_keywords(keywords: list[tuple[str, int]]):
@@ -63,6 +77,40 @@ def save_google_trends(trends: list[dict]):
             'INSERT INTO google_trends (seed, related_keyword, trend_value, trend_type, collected_at) VALUES (?, ?, ?, ?, ?)',
             [(t['seed'], t['related'], t['value'], t['type'], now) for t in trends]
         )
+
+
+def save_content_brief(brief: dict):
+    now = datetime.utcnow().isoformat()
+    with get_db() as conn:
+        conn.execute(
+            '''INSERT INTO content_briefs
+               (content_angle, hook, text_overlays, voiceover_script, caption, hashtags, generated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (
+                brief.get('content_angle', ''),
+                brief.get('hook', ''),
+                json.dumps(brief.get('text_overlays', [])),
+                brief.get('voiceover_script', ''),
+                brief.get('caption', ''),
+                json.dumps(brief.get('hashtags', [])),
+                now,
+            ),
+        )
+
+
+def get_latest_brief() -> dict | None:
+    if not os.path.exists(DB_PATH):
+        return None
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT * FROM content_briefs ORDER BY generated_at DESC LIMIT 1'
+        ).fetchone()
+        if not row:
+            return None
+        brief = dict(row)
+        brief['text_overlays'] = json.loads(brief['text_overlays'])
+        brief['hashtags'] = json.loads(brief['hashtags'])
+        return brief
 
 
 def get_latest_data() -> dict:
@@ -102,4 +150,5 @@ def get_latest_data() -> dict:
             'google_trends': google_trends,
             'last_updated': latest_reddit,
             'status': 'ok' if reddit_keywords or google_trends else 'pending',
+            'content_brief': get_latest_brief(),
         }

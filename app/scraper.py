@@ -6,7 +6,8 @@ from collections import Counter
 import requests
 from pytrends.request import TrendReq
 
-from database import save_reddit_keywords, save_google_trends
+from database import save_reddit_keywords, save_google_trends, save_content_brief
+from content_generator import generate_content_brief
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger(__name__)
@@ -125,6 +126,9 @@ def scrape_google_trends() -> list[dict]:
 def run_scraper():
     log.info('=== Scraper run started ===')
 
+    reddit_data = []
+    trends_data = []
+
     try:
         reddit_data = scrape_reddit()
         if reddit_data:
@@ -138,5 +142,16 @@ def run_scraper():
             save_google_trends(trends_data)
     except Exception as exc:
         log.error('Google Trends scrape failed: %s', exc)
+
+    # Generate content brief from fresh trend data
+    if reddit_data or trends_data:
+        try:
+            reddit_dicts = [{'keyword': kw, 'count': c} for kw, c in reddit_data]
+            trends_dicts = [{'seed': t['seed'], 'related_keyword': t['related'], 'trend_value': t['value']} for t in trends_data]
+            brief = generate_content_brief(reddit_dicts, trends_dicts)
+            if brief:
+                save_content_brief(brief)
+        except Exception as exc:
+            log.error('Content brief generation failed: %s', exc)
 
     log.info('=== Scraper run complete ===')

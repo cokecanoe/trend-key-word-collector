@@ -201,6 +201,115 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Content Brief */
+    .brief-section {
+      border-top: 1px solid var(--border);
+      padding: 28px 32px;
+    }
+
+    .brief-hook {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin: 16px 0 24px;
+      line-height: 1.2;
+    }
+
+    .brief-angle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brief-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .brief-grid { grid-template-columns: 1fr; }
+    }
+
+    .brief-block-title {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .overlay-list {
+      list-style: none;
+      counter-reset: overlay;
+    }
+
+    .overlay-list li {
+      counter-increment: overlay;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .overlay-list li::before {
+      content: counter(overlay);
+      color: var(--muted);
+      font-size: 10px;
+      min-width: 14px;
+      padding-top: 2px;
+    }
+
+    .voiceover-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #cccccc;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .caption-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hashtags-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #d4af37;
+      word-break: break-word;
+    }
+
+    .copy-btn {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn.copied { border-color: #4caf50; color: #4caf50; }
+
     footer {
       border-top: 1px solid var(--border);
       padding: 16px 32px;
@@ -294,6 +403,75 @@
   </section>
 
 </main>
+
+<!-- CONTENT BRIEF SECTION -->
+{% if content_brief %}
+<div class="brief-section">
+  <div class="section-header">
+    <span class="section-title">AI Content Brief</span>
+    <span class="section-source">Generated {{ content_brief.generated_at[:19].replace('T', ' ') }} UTC &nbsp;·&nbsp; Ready to use on TikTok</span>
+  </div>
+
+  <div class="brief-angle">{{ content_brief.content_angle }}</div>
+
+  <div class="brief-hook">"{{ content_brief.hook }}"</div>
+
+  <div class="brief-grid">
+
+    <!-- Text Overlays -->
+    <div>
+      <div class="brief-block-title">Text Overlays</div>
+      <ol class="overlay-list">
+        {% for overlay in content_brief.text_overlays %}
+        <li>{{ overlay }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <!-- Voiceover Script -->
+    <div>
+      <div class="brief-block-title">Voiceover Script</div>
+      <div class="voiceover-box" id="voiceover-box">{{ content_brief.voiceover_script }}</div>
+      <button class="copy-btn" onclick="copyText('voiceover-box', this)">COPY SCRIPT</button>
+    </div>
+
+    <!-- Caption + Hashtags -->
+    <div>
+      <div class="brief-block-title">Caption</div>
+      <div class="caption-box" id="caption-box">{{ content_brief.caption }}</div>
+      <button class="copy-btn" onclick="copyText('caption-box', this)">COPY CAPTION</button>
+
+      <div class="brief-block-title" style="margin-top: 18px;">Hashtags</div>
+      <div class="hashtags-box" id="hashtags-box">{{ content_brief.hashtags | join(' ') }}</div>
+      <button class="copy-btn" onclick="copyText('hashtags-box', this)">COPY HASHTAGS</button>
+    </div>
+
+  </div>
+</div>
+{% elif status != 'pending' %}
+<div class="brief-section">
+  <div class="section-header">
+    <span class="section-title">AI Content Brief</span>
+  </div>
+  <div class="empty-state" style="padding: 20px 0;">
+    Add your <strong>ANTHROPIC_API_KEY</strong> in Railway environment variables to enable AI content briefs.
+  </div>
+</div>
+{% endif %}
+
+<script>
+  function copyText(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'COPIED';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = btn.textContent.replace('COPIED', btn.dataset.label || 'COPY');
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
 
 <footer>
   <span>KARASU APPAREL — karasuapparel.ca</span>
