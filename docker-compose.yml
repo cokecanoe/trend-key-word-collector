@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - SCRAPE_INTERVAL_HOURS=6
+      - DB_PATH=/app/data/trends.db
+    restart: unless-stopped

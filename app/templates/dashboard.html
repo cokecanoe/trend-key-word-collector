@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="refresh" content="1800" />
+  <title>KARASU / TREND TRACKER</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #222222;
+      --accent: #ffffff;
+      --muted: #555555;
+      --bar: #2a2a2a;
+      --bar-fill: #ffffff;
+      --rising: #d4af37;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--accent);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+    }
+
+    .logo span { color: var(--muted); font-size: 13px; letter-spacing: 0.1em; }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .meta strong { color: var(--accent); }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    @media (max-width: 780px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    section {
+      padding: 28px 32px;
+      border-right: 1px solid var(--border);
+    }
+
+    section:last-child { border-right: none; }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .section-source {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* Reddit keyword bars */
+    .keyword-list { list-style: none; }
+
+    .keyword-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .keyword-rank {
+      color: var(--muted);
+      font-size: 11px;
+      width: 22px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .keyword-word {
+      width: 130px;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .keyword-bar-wrap {
+      flex: 1;
+      background: var(--bar);
+      height: 6px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .keyword-bar-fill {
+      background: var(--bar-fill);
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .keyword-count {
+      color: var(--muted);
+      font-size: 11px;
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Google Trends */
+    .trends-list { list-style: none; }
+
+    .trend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      background: var(--surface);
+      border-left: 2px solid var(--border);
+    }
+
+    .trend-item.rising { border-left-color: var(--rising); }
+
+    .trend-seed {
+      color: var(--muted);
+      font-size: 10px;
+      width: 110px;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .trend-query { flex: 1; }
+
+    .trend-badge {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      padding: 2px 5px;
+      border: 1px solid var(--rising);
+      color: var(--rising);
+    }
+
+    .trend-badge.top {
+      border-color: var(--muted);
+      color: var(--muted);
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 40px 0;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--muted);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 32px;
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    KARASU <span>/ TREND TRACKER</span>
+  </div>
+  <div class="meta">
+    {% if last_updated %}
+      Last synced: <strong>{{ last_updated[:19].replace('T', ' ') }} UTC</strong>
+      &nbsp;·&nbsp; Refreshes every {{ interval_hours }}h
+    {% else %}
+      <span class="spinner"></span> First scrape in progress — check back in a few minutes
+    {% endif %}
+  </div>
+</header>
+
+<main>
+
+  <!-- REDDIT SECTION -->
+  <section>
+    <div class="section-header">
+      <span class="section-title">Reddit Keywords</span>
+      <span class="section-source">r/streetwear · r/hiphopfashion · r/japanesestreetwear · r/Lookbook</span>
+    </div>
+
+    {% if reddit_keywords %}
+      {% set max_count = reddit_keywords[0].count %}
+      <ul class="keyword-list">
+        {% for item in reddit_keywords %}
+        <li class="keyword-item">
+          <span class="keyword-rank">{{ loop.index }}</span>
+          <span class="keyword-word">{{ item.keyword }}</span>
+          <div class="keyword-bar-wrap">
+            <div class="keyword-bar-fill" style="width: {{ (item.count / max_count * 100)|round }}%"></div>
+          </div>
+          <span class="keyword-count">{{ item.count }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        {% if status == 'pending' %}
+          <span class="spinner"></span> Collecting data...
+        {% else %}
+          No Reddit data yet.
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- GOOGLE TRENDS SECTION -->
+  <section>
+    <div class="section-header">
+      <span class="section-title">Google Trends</span>
+      <span class="section-source">Rising &amp; top related searches · past 7 days</span>
+    </div>
+
+    {% if google_trends %}
+      <ul class="trends-list">
+        {% for item in google_trends %}
+        <li class="trend-item {% if item.trend_type == 'rising' %}rising{% endif %}">
+          <span class="trend-seed">{{ item.seed }}</span>
+          <span class="trend-query">{{ item.related_keyword }}</span>
+          <span class="trend-badge {% if item.trend_type == 'top' %}top{% endif %}">
+            {{ item.trend_type | upper }}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        {% if status == 'pending' %}
+          <span class="spinner"></span> Collecting data...
+        {% else %}
+          No Trends data yet.
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+</main>
+
+<footer>
+  <span>KARASU APPAREL — karasuapparel.ca</span>
+  <span>Page auto-refreshes every 30 min &nbsp;·&nbsp; <a href="/api/data" style="color: var(--muted);">JSON API</a></span>
+</footer>
+
+</body>
+</html>
